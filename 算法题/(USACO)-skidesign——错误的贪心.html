@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(USACO) skidesign——错误的贪心</title>
+    <style type="text/css" media="all">
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        color: #777;
+        background-color: white;
+      }
+      .container {
+        width: 700px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .post {
+        font-family: Georgia, "Times New Roman", Times, "SimSun", serif;
+        position: relative;
+        padding: 70px;
+        bottom: 0;
+        overflow-y: auto;
+        font-size: 16px;
+        font-weight: normal;
+        line-height: 25px;
+        color: #515151;
+      }
+
+      .post h1{
+        font-size: 50px;
+        font-weight: 500;
+        line-height: 60px;
+        margin-bottom: 40px;
+        color: inherit;
+      }
+
+      .post p {
+        margin: 0 0 35px 0;
+      }
+
+      .post img {
+        border: 1px solid #D9D9D9;
+      }
+
+      .post a {
+        color: #28A1C5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="post">
+        <h1 class="title">(USACO) skidesign——错误的贪心</h1>
+        <div class="show-content">
+          <p>题目链接：http://train.usaco.org/usacoprob2?a=xv5G1xFEnY5&amp;S=skidesign</p><p>看完题目，我一瞬间最简单的想法是：对于每一对差diff大于17的最高堆max和最低堆min，将它们增加/减少同样的高度，改成diff==17，之后便不用考虑这对堆。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-0c1df182eac8c1af.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p>WA一次后我发现没有考虑重复高度的情况。对每对不同数量的max,min堆，只要max数量不等于min 数量，减少同样的高度就是错的。于是乎列出式子：minh=min堆高度，maxh=max堆高度，a=min堆数量，b=max堆数量，设t为所有min堆增加的高度，则这次修改的代价为：a(t^2)+b((maxh-minh-17-t)^2)。则当t=b(maxh-minh-17)/(a+b)时代价最低。考虑到只能修改整数，t很可能不是整数，所以代价为t和t++中最小的。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-293a8b7be10ce2dd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p>然而我又WA了。。                                                                                                                        经过2hr痛苦的查错，我才发现我的贪心方法从一开始就是错的：修改过高度的max和min不能直接扔掉。考虑这个情况：0 1 2 100。一次运算后是 41,1,2,59。第二次判定1,2不用改。显然是错的。那么我该怎么讨论修改后的情况？太复杂了。</p><p>又是30min的思考，我终于发现问题的本质：找出一个大小为17的区间[low,high]，所有比low低的堆修改成low，所有比high高的的堆修改成high，区间内的堆不用改，使得代价最小。</p><p><br></p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-6d10b87ef8297362.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p>N&lt;1000，高度&lt;100，所以，正解是：暴力枚举所有区间找最小代价。时间O(HN)。代码超简单。                                                                                                                                    </p><p>/*ID: lpjwork1</p><p>TASK: skidesign</p><p>LANG: C++11</p><p>*/</p><p>#include&lt;iostream&gt;</p><p>#include&lt;stdio.h&gt;</p><p>#include&lt;map&gt;</p><p>#include&lt;string&gt;</p><p>#include&lt;string.h&gt;</p><p>#include&lt;vector&gt;</p><p>#include&lt;queue&gt;</p><p>#include&lt;algorithm&gt;</p><p>#include&lt;fstream&gt;</p><p>using namespace std;</p><p>int cnt[101];</p><p>int N,ans=1&lt;&lt;30;</p><p>ofstream fout ("skidesign.out");</p><p>ifstream fin ("skidesign.in");</p><p>int main() {</p><p>	memset(cnt,0,sizeof(cnt));</p><p>	fin&gt;&gt;N;</p><p>	for (int i=1;i&lt;=N;i++)</p><p>	{</p><p>		int temp;fin&gt;&gt;temp;</p><p>		cnt[temp]++;</p><p>	}</p><p>	int l=0,r=17;</p><p>	for (;r&lt;=100;l++,r++)</p><p>	{</p><p>		int tempans=0;</p><p>		for (int i=0;i&lt;l;i++)	tempans+=(l-i)*(l-i)*cnt[i];</p><p>		for (int i=r+1;i&lt;=100;i++)	tempans+=(i-r)*(i-r)*cnt[i];</p><p>		ans=min(ans,tempans);</p><p>	}</p><p>	fout&lt;&lt;ans&lt;&lt;endl;</p><p>    fout.close();fin.close();</p><p>    return 0;</p><p>}</p><p>USACO有一篇文章说：如果能在时间范围内暴力，那就去暴力。如果你要贪心，你必须证明贪心是对的。这题真是体现的淋漓尽致。</p><p>                                                                                                                                    2018.10.20</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

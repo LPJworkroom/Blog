@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(POJ3074)sudoku——深搜策略&amp;位运算</title>
+    <style type="text/css" media="all">
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        color: #777;
+        background-color: white;
+      }
+      .container {
+        width: 700px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .post {
+        font-family: Georgia, "Times New Roman", Times, "SimSun", serif;
+        position: relative;
+        padding: 70px;
+        bottom: 0;
+        overflow-y: auto;
+        font-size: 16px;
+        font-weight: normal;
+        line-height: 25px;
+        color: #515151;
+      }
+
+      .post h1{
+        font-size: 50px;
+        font-weight: 500;
+        line-height: 60px;
+        margin-bottom: 40px;
+        color: inherit;
+      }
+
+      .post p {
+        margin: 0 0 35px 0;
+      }
+
+      .post img {
+        border: 1px solid #D9D9D9;
+      }
+
+      .post a {
+        color: #28A1C5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="post">
+        <h1 class="title">(POJ3074)sudoku——深搜策略&amp;位运算</h1>
+        <div class="show-content">
+          <p>题目链接：<a href="http://poj.org/problem?id=3074" target="_blank">3074 -- Sudoku</a><br>题目大意：填9*9且包括九宫格的数独，一些格子已填好。                                                          </p><p>没有多犹豫，深搜。但是直接深搜当然不行。一行空的就有9！种情况，必然要优化。</p><p>经过思考我使用了以下三种小小的优化策略（起了几个俗名）<br>1.“最少优先”<br>2.“早发现早治疗”<br>3.位运算保存状态</p><p><b>最少优先</b><br>人在解数独时，一种显而易见的策略是：先试可能性最少的。比如某格只能填2个数字，另一格能填5个，当然会先试第一个。如果你能成功填好第二个格子，你必然要也要填好第一个，而第一个的可能性更少，能更早的发现填不了的结果，从而避免不必要的尝试。</p><p>所以在每次DFS时遍历所有格子，指定可能性最少的格子递归。</p><p><b>早发现早治疗</b><br>试想这样的情况：一个排得靠后的格子已经没有可填的数，而前面的格子都可填，那么显然要立刻退出递归。如果不提前发现这个“没救”的格子继续搜索其他的格子，必然是徒劳。<br>这个策略其实可以和第一个策略整合，遍历格子时发现无解的格子就退出。但如果撇开本题数独的背景，这个策略在其他题目中也是很有意义的，所以也单独列出。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-d2d99a216f9417d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p><b>位运算保存状态</b><br>本题当然可以用数组保存每格可填数的状态，但是效率太差，要搞三维数组：<br>bool [行][列][9个数字]。考虑到只有9个数字，在int32位内，于是用一个int的第0-8位表示一格可填的数：1可填，0不可。比如：111011010，代表1、3、6不可填（为什么用1表示能填？请见下文）。并且没必要为每格保存一个状态：填上一个数字会对整行、整列、整个九宫格都产生影响，所以一格的状态完全可以用该格所在的行、列、九宫格进行<b>与运算</b>得到。这样就只要以下的数组：int 每行[9],int 每列[9],int 九宫格[3][3]。将数字从某格填入/擦除也将是将对应的二进制位取反。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-fb0019424cd3694a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p>以下是其他的实现细节：</p><p><b>lowbit运算</b></p><p>到目前，得到一个格子能填那些数字仍是麻烦的：比如A=111011010，要不断的<br>(A&amp;1)==1？true：false；A&gt;&gt;=1；也就是遍历每一位。所以我们引入lowbit运算。lowbit的原本意义是返回一个数最后一个1到结尾代表的数，如lowbit(111011010)==10，lowbit(111011000)==1000。只要我们把1指向0，10指向1，100指向2，即：<img class="math-inline" src="https://math.jianshu.com/math?formula=2%5Ei%20" alt="2^i " mathimg="1">指向第i个数，就可以对一个数不断lowbit得到哪些数能填了。这就是要用1表示状态的原因。我们用一个<br>int binum[<img class="math-inline" src="https://math.jianshu.com/math?formula=2%5E%7B10%7D" alt="2^{10}" mathimg="1">]，分别把第<img class="math-inline" src="https://math.jianshu.com/math?formula=2%5E0%2C2%5E1%2C2%5E2%E2%80%A6%E2%80%A6" alt="2^0,2^1,2^2……" mathimg="1">位设为0，1，2等等，就可用binum[lowbit(x)]以<br>O(1)的时间取出。<br>最后，lowbit有一个O(1)的公式：lowbit(x)=x&amp;-x。循环的x-=lowbit(x)就可以遍历所有空位。于是我们解决了取出可填数的问题。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-7590a5a62848711a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption">取出数的具体实现</div>
+</div><p><b>递归对状态的修改及回溯的恢复</b></p><p>这题状态的修改和恢复是很麻烦的：我用了rowmap[]行的状态，colmap[]列的状态，sg[][]九宫格的状态，vis[][]每格是否填过了，sgfill[][]九宫格已填的数字这么多数组保存状态，相当繁琐。干脆整合成modify和demodi(fy)函数看着简洁，再把填数字/擦除数字整合成函数add和erase保证正确性。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-d6da297e0b9a118f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption">修改和恢复</div>
+</div><p>附上代码。</p><p>```</p><p>#include&lt;vector&gt;</p><p>#include&lt;string&gt;</p><p>#include&lt;string.h&gt;</p><p>#include&lt;iostream&gt;</p><p>#include&lt;stdio.h&gt;</p><p>#include&lt;algorithm&gt;</p><p>#include&lt;fstream&gt;</p><p>using namespace std;</p><p>const int MAXN=9,INF=1&lt;&lt;30,FULL=0,EMP=(1&lt;&lt;9)-1;</p><p>int rowmap[MAXN],colmap[MAXN],sg[3][3],binum[1&lt;&lt;12],sgfill[3][3];</p><p>int ans[MAXN][MAXN];</p><p>bool vis[MAXN][MAXN];</p><p>int N,M,num;</p><p>bool found=false;</p><p>void dfs(int);</p><p>void printans();</p><p>void modify(int row,int col,int todo);</p><p>void demodi(int row,int col,int todo);</p><p>void getleast(int&amp; row,int&amp; col);</p><p>bool notfill(int,int);</p><p>int lowbit(int);</p><p>void add(int&amp;,int);</p><p>void erase(int&amp;,int);</p><p>bool wrong();</p><p>void solve();</p><p>void input(char str[]);</p><p>int main()</p><p>{</p><p>	for (int i=0;i&lt;9;i++)	binum[1&lt;&lt;i]=i;</p><p>	solve();</p><p>return 0;</p><p>}</p><p>void solve()</p><p>{</p><p>	char str[100];</p><p>	while (~scanf("%s",str)&amp;&amp;str[0]!='e')</p><p>	{</p><p>		if (str[0]=='e')	return;</p><p>		found=false;</p><p>		input(str);</p><p>		dfs(num);</p><p>	}</p><p>}</p><p>void input(char str[])</p><p>{</p><p>	num=0;</p><p>	for (int i=0;i&lt;9;i++)	rowmap[i]=colmap[i]=EMP;</p><p>	for (int i=0;i&lt;9;i++)</p><p>	{</p><p>		sg[i/3][i%3]=EMP;</p><p>		sgfill[i/3][i%3]=0;</p><p>	}</p><p>	for (int i=0;i&lt;9;i++)</p><p>		for (int j=0;j&lt;9;j++)</p><p>		{</p><p>			ans[i][j]=-1;</p><p>			vis[i][j]=0;</p><p>			int now;</p><p>			if (str[i*9+j]=='.')	continue;</p><p>			else	now=str[i*9+j]-'0';</p><p>			ans[i][j]=now-1;</p><p>			vis[i][j]=1;</p><p>			sgfill[i/3][j/3]++;</p><p>			num++;</p><p>			add(sg[i/3][j/3],now-1);</p><p>			add(rowmap[i],now-1);</p><p>			add(colmap[j],now-1);</p><p>		}</p><p>}</p><p>void dfs(int no)</p><p>{</p><p>	if (found)	return;</p><p>	if (no==81)	printans();</p><p>	if (found||wrong())	return;</p><p>	int row=0,col=0;</p><p>	getleast(row,col);</p><p>	for (int ind=(rowmap[row]&amp;colmap[col]&amp;sg[row/3][col/3]);ind;ind-=lowbit(ind))</p><p>	{</p><p>		int todo=binum[lowbit(ind)];</p><p>		modify(row,col,todo);</p><p>		dfs(no+1);</p><p>		demodi(row,col,todo);</p><p>	}</p><p>}</p><p>void getleast(int&amp; row,int&amp; col)</p><p>{</p><p>	int minlast=INF;</p><p>	for (int i=0;i&lt;9;i++)</p><p>		for (int j=0;j&lt;9;j++)</p><p>		{</p><p>			if (vis[i][j])	continue;</p><p>			int cnt=0;</p><p>			for (int ind=(rowmap[i]&amp;colmap[j]&amp;sg[i/3][j/3]);ind;ind-=lowbit(ind))	cnt++;</p><p>			if (cnt&lt;minlast||(cnt==minlast&amp;&amp;sgfill[row/3][col/3]&gt;sgfill[i/3][j/3])){</p><p>				row=i;col=j;minlast=cnt;</p><p>			}</p><p>			if (minlast==1)	return;</p><p>		}</p><p>}</p><p>bool wrong()</p><p>{</p><p>	for (int i=0;i&lt;9;i++)</p><p>		for (int j=0;j&lt;9;j++)</p><p>			if (!vis[i][j]&amp;&amp;(rowmap[i]&amp;colmap[j]&amp;sg[i/3][j/3])==FULL)	return true;</p><p>	return false;</p><p>}</p><p>void modify(int row,int col,int todo)</p><p>{</p><p>	vis[row][col]=1;sgfill[row/3][col/3]++;</p><p>	ans[row][col]=todo;</p><p>	add(sg[row/3][col/3],todo);</p><p>	add(rowmap[row],todo);</p><p>	add(colmap[col],todo);</p><p>}</p><p>void demodi(int row,int col,int todo)</p><p>{</p><p>	vis[row][col]=0;sgfill[row/3][col/3]--;</p><p>	erase(sg[row/3][col/3],todo);</p><p>	erase(colmap[col],todo);</p><p>	erase(rowmap[row],todo);</p><p>}</p><p>bool notfill(int a,int todo)</p><p>{</p><p>	return (a&amp;(1&lt;&lt;todo))!=0;</p><p>}</p><p>void add(int&amp; a,int todo)</p><p>{</p><p>	if (!notfill(a,todo))	return;</p><p>	a-=(1&lt;&lt;todo);</p><p>}</p><p>void erase(int&amp; a,int todo)</p><p>{</p><p>	if (notfill(a,todo))	return;</p><p>	a+=(1&lt;&lt;todo);</p><p>}</p><p>int lowbit(int a)</p><p>{</p><p>	return a&amp;-a;</p><p>}</p><p>void printans()</p><p>{</p><p>	found=1;</p><p>	for (int i=0;i&lt;9;i++)</p><p>		for (int j=0;j&lt;9;j++)</p><p>			printf("%d",ans[i][j]+1);</p><p>	printf("\n");</p><p>}</p><p>```</p><p>最后是一点小感想：<br>这也算是我做的最复杂的题了（虽然我也没做过多少题），涉及的知识面相当多，杂，比如位运算的种种方式都是我没尝试过的。可想而知这题花了我很久，前后约一天。正所谓：编码三分钟，调试两小时。我很感谢能有这样锻炼的机会。<br>这题的正解并不是DFS，在以上种种优化下我才以900ms惊险通过。DISCUSS中不少人表示用Dancing link的方法只用50ms即通过，真是令人震惊。以后了解DLX后也许会再写文介绍。</p><div class="image-package">
+<img class="uploaded-img" src="http://upload-images.jianshu.io/upload_images/14546900-8689cef531460d11.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="auto" height="auto"><br><div class="image-caption"></div>
+</div><p>                                                                                                    2018.10.24</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
